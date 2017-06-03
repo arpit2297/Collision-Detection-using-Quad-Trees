@@ -50,27 +50,20 @@ class Color(Enum):
 
 def contained(point, region):
 	topLeft = region[0]
-	lowerX = topLeft[0]
-	lowerY = topLeft[1]
+	lowerX = topLeft.x
+	lowerY = topLeft.y
 	bottomRight = region[1]
-	higherX = bottomRight[0]
-	higherY = bottomRight[1]
+	higherX = bottomRight.x
+	higherY = bottomRight.y
 
 	checkX = (point.x >= lowerX) and (point.x <= higherX)
 	checkY = (point.y >= lowerY) and (point.y <= higherY)
 	return checkX and checkY
 
 
-class QuadTree:
-	def __init__(self, boundingBox):
-		self.maxLimit = 2
-		self.ptsInRegion = 0
-		self.boundingBox = boundingBox
-		self.points = []
+class QTNode:
+	def __init__(self):
 		self.children = []
-
-	def isEmpty(self):
-		return self == None
 
 	def isLeaf(self):
 		for child in self.children:
@@ -78,74 +71,93 @@ class QuadTree:
 				return False
 		return True
 
+class QuadTree:
+	def __init__(self, boundingBox):
+		self.root = None
+		self.boundingBox = boundingBox # bounding box is a property of the QTree and not the QTNode
+		self.points = []
+		self.maxLimit = 2
+		self.ptsInRegion = 0
+
+	def isEmpty(self):
+		return self.root == None
+
 	def find(self,point):
-		if (self.isEmpty):
-			return None # should never reach here
-		if (self.isLeaf): # invariant: if its a leaf, it has to be present in bounding box
+		if (self.root.isLeaf): # invariant: if its a leaf, it has to be present in bounding box
+			#print("always leaf")
 			return self
 		for i in range(4):
-			q = self.children[i]
+			q = self.root.children[i]
 			if (contained(point, q.boundingBox)):
+				print("contained")
 				return find(q,point)
+
 		return self # should never get here .. 
 
 	def insert(self,point):
-		if (not contained(point, q.boundingBox)):
-			return None
+		if (not contained(point, self.boundingBox)):
+			# print("not contained!")
+			return
 
-		q = find(point)
+		if (self.isEmpty()):
+			print("Quad tree empty. Making new root")
+			self.root = QTNode()
+			self.ptsInRegion = 1
+			return
+
+		q = self.find(point)
 		if (not q):
 			print("Null detect") # should never get here
 
-		if (q.isLeaf() and q.ptsInRegion < q.maxLimit):
+		elif (q.root.isLeaf() and q.ptsInRegion < q.maxLimit):
+			print("Appending")
 			q.points.append(point)
 			q.ptsInRegion += 1
+			print(q.ptsInRegion)
 
-		elif (q.isLeaf):
+		elif (q.root.isLeaf):
+			print("gonna split")
 			q.split()
-			for child in q.children:
-				child.insert(point)
+
 		else: # not a leaf
-			for child in q.children:
+			print("not a leaf")
+			for child in q.root.children:
 				child.insert(point)
 
 
 	def split(self):
-		if (self.isEmpty):
+		if (self.isEmpty()):
+			print("empty!!")
 			return
-		topLeft = boundingBox[0]
-		lowerX = topLeft[0]
-		lowerY = topLeft[1]
-		bottomRight = boundingBox[1]
-		higherX = bottomRight[0]
-		higherY = bottomRight[1]
+		topLeft = self.boundingBox[0]
+		lowerX = topLeft.x
+		lowerY = topLeft.y
+		bottomRight = self.boundingBox[1]
+		higherX = bottomRight.x
+		higherY = bottomRight.y
 
 		meanX = (lowerX + higherX)/2
 		meanY = (lowerY + higherY)/2
-		q1 = Quad((meanX, lowerY), (higherX, meanY))
-		q2 = Quad((lowerX,lowerY), (meanX, meanY))
-		q3 = Quad((lowerX, meanY), (meanX, lowerX))
-		q4 = Quad((meanX, meanY), (higherX, higherY))
-		for point in points:
+		q1 = QuadTree((Point(meanX, lowerY), Point(higherX, meanY)))
+		q2 = QuadTree((Point(lowerX,lowerY), Point(meanX, meanY)))
+		q3 = QuadTree((Point(lowerX, meanY), Point(meanX, higherY)))
+		q4 = QuadTree((Point(meanX, meanY), Point(higherX, higherY)))
+		flag = False
+		for point in self.points:
 			if (contained(point, q1.boundingBox)):
-				q1.points.append(point)
-				q1.ptsInRegion += 1
+				print("q1 contains")
+				q1.insert(point)
 			elif (contained(point, q2.boundingBox)):
-				q2.points.append(point)
-				q2.ptsInRegion += 1
+				print("q2 contains")
+				q2.insert(point)
 			elif (contained(point, q3.boundingBox)):
-				q3.points.append(point)
-				q3.ptsInRegion += 1
-			elif (contained(point, q3.boundingBox)):
-				q4.points.append(point)
-				q4.ptsInRegion += 1
+				print("q3 contains")
+				q3.insert(point)
+			elif (contained(point, q4.boundingBox)):
+				print("q4 contains")
+				q4.insert(point)
 
-		self.children = [q1,q2,q3,q4]
-
-def detectCollisions(root, objects, cnt):
-	if (root.isEmpty):
-		return cnt
-
+		self.root.children = [q1,q2,q3,q4]
 
 def drawPointSizedObject(windowScreen, color, coords, rad,width):
 	pygame.draw.circle(windowScreen,color,coords,rad,width)
@@ -156,7 +168,7 @@ def setWindowCaption(caption):
 
 def main():
 	window = Window(pygame.display.set_mode([700,500]), 700, 500)
-	limit = 250
+	limit = 3
 
 	setWindowCaption("Collision Detection Using Quad Trees")
 
@@ -175,6 +187,7 @@ def main():
 	done = False
 	clock = pygame.time.Clock()
 	while not done:
+		print("loop")
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				done = True
@@ -196,9 +209,11 @@ def main():
 		
 		pygame.display.flip()
 
-		root = QuadTree(((0,0), (window.width, window.height)))
+		qTree = QuadTree((Point(0,0), Point(window.width, window.height)))
+		for thing in objects:
+			qTree.insert(thing)
 		# Limit to 50 fps
-		clock.tick(50)
+		clock.tick(10)
 
 	pygame.quit()
 
