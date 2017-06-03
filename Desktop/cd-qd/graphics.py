@@ -1,6 +1,7 @@
 import pygame
 import math
 import random
+import gc
 from enum import Enum
 
 pygame.init()
@@ -26,10 +27,9 @@ class Point:
 		self.velocity = velocity	
 
 class Window:
-	def __init__(self,windowScreen, width, height):
-		self.windowScreen = windowScreen
-		self.width = width
-		self.height = height
+	windowScreen = pygame.display.set_mode([700,500])
+	width = 700
+	height = 500
 
 	def getHeight(self):
 		return self.height
@@ -76,58 +76,60 @@ class QuadTree:
 		self.root = None
 		self.boundingBox = boundingBox # bounding box is a property of the QTree and not the QTNode
 		self.points = []
-		self.maxLimit = 2
+		self.maxLimit = 3
 		self.ptsInRegion = 0
 
 	def isEmpty(self):
 		return self.root == None
 
-	def find(self,point):
-		if (self.root.isLeaf): # invariant: if its a leaf, it has to be present in bounding box
+	def find(self,qtree,point):
+		if (qtree.root.isLeaf): # invariant: if its a leaf, it has to be present in bounding box
 			#print("always leaf")
 			return self
 		for i in range(4):
-			q = self.root.children[i]
+			q = qtree.root.children[i]
 			if (contained(point, q.boundingBox)):
-				print("contained")
+				#print("contained")
 				return find(q,point)
 
 		return self # should never get here .. 
 
 	def insert(self,point):
 		if (not contained(point, self.boundingBox)):
-			# print("not contained!")
+			#print("not contained!")
 			return
 
 		if (self.isEmpty()):
-			print("Quad tree empty. Making new root")
+			#print("Quad tree empty. Making new root")
 			self.root = QTNode()
+			self.points.append(point)
 			self.ptsInRegion = 1
 			return
 
-		q = self.find(point)
+		q = self.find(self, point)
 		if (not q):
 			print("Null detect") # should never get here
 
 		elif (q.root.isLeaf() and q.ptsInRegion < q.maxLimit):
-			print("Appending")
+			#print("Appending")
 			q.points.append(point)
 			q.ptsInRegion += 1
-			print(q.ptsInRegion)
+			#print(q.ptsInRegion)
 
 		elif (q.root.isLeaf):
-			print("gonna split")
+			#print("gonna split")
+			q.points.append(point)
+			q.ptsInRegion += 1
 			q.split()
 
 		else: # not a leaf
-			print("not a leaf")
+			#print("not a leaf")
 			for child in q.root.children:
 				child.insert(point)
 
 
 	def split(self):
 		if (self.isEmpty()):
-			print("empty!!")
 			return
 		topLeft = self.boundingBox[0]
 		lowerX = topLeft.x
@@ -142,22 +144,30 @@ class QuadTree:
 		q2 = QuadTree((Point(lowerX,lowerY), Point(meanX, meanY)))
 		q3 = QuadTree((Point(lowerX, meanY), Point(meanX, higherY)))
 		q4 = QuadTree((Point(meanX, meanY), Point(higherX, higherY)))
-		flag = False
+
+		drawLine(Window().getWindowReference(), (255,255,255), (meanX, lowerY), (meanX, higherY))
+		drawLine(Window().getWindowReference(), (255,255,255), (lowerX, meanY), (higherX, meanY))
+
 		for point in self.points:
 			if (contained(point, q1.boundingBox)):
-				print("q1 contains")
+				#print("q1 contains")
+				#print(q1.boundingBox)
 				q1.insert(point)
 			elif (contained(point, q2.boundingBox)):
-				print("q2 contains")
+				#print("q2 contains")
 				q2.insert(point)
 			elif (contained(point, q3.boundingBox)):
-				print("q3 contains")
+				#print("q3 contains")
 				q3.insert(point)
 			elif (contained(point, q4.boundingBox)):
-				print("q4 contains")
+				#print("q4 contains")
 				q4.insert(point)
 
 		self.root.children = [q1,q2,q3,q4]
+
+def drawLine(windowScreen, color, point1, point2):
+	#print("been here")
+	pygame.draw.line(windowScreen, color, point1,point2)
 
 def drawPointSizedObject(windowScreen, color, coords, rad,width):
 	pygame.draw.circle(windowScreen,color,coords,rad,width)
@@ -167,9 +177,8 @@ def setWindowCaption(caption):
 	pygame.display.set_caption(caption)
 
 def main():
-	window = Window(pygame.display.set_mode([700,500]), 700, 500)
-	limit = 3
-
+	window = Window()
+	limit = 20
 	setWindowCaption("Collision Detection Using Quad Trees")
 
 	objects = list()
@@ -186,15 +195,14 @@ def main():
 
 	done = False
 	clock = pygame.time.Clock()
+	window.getWindowReference().fill(Color.BLACK.value)
 	while not done:
-		print("loop")
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				done = True
 
 		# draw here
 		window.getWindowReference().fill(Color.BLACK.value)
-
 		for ball in objects:
 			if ball.x == window.getWidth() or ball.x == 0:
 				ball.fx = -1 * ball.fx
@@ -212,8 +220,12 @@ def main():
 		qTree = QuadTree((Point(0,0), Point(window.width, window.height)))
 		for thing in objects:
 			qTree.insert(thing)
+		
+		pygame.display.flip()
+
 		# Limit to 50 fps
-		clock.tick(10)
+		gc.collect()
+		clock.tick(50)
 
 	pygame.quit()
 
