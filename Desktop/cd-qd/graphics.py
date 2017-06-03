@@ -1,5 +1,6 @@
 import pygame
 import math
+import sys
 import random
 import gc
 from enum import Enum
@@ -46,6 +47,7 @@ class Color(Enum):
 	RED = (255,0,0)
 	BLUE = (0,0,255)
 
+# Function to check if a 'point' is contained in a 'region'
 def contained(point, region):
 	topLeft = region[0]
 	lowerX = topLeft.x
@@ -58,6 +60,7 @@ def contained(point, region):
 	checkY = (point.y >= lowerY) and (point.y <= higherY)
 	return checkX and checkY
 
+# Function to check if two circles are colliding
 def detectCircleCollision(point1, point2):
 	# point1, point2 are the circles
 	dx = point2.x - point1.x
@@ -69,6 +72,18 @@ def detectCircleCollision(point1, point2):
 		return True
 	return False
 
+def drawLine(windowScreen, color, point1, point2):
+	#print("been here")
+	pygame.draw.line(windowScreen, color, point1,point2)
+
+def drawPointSizedObject(windowScreen, color, coords, rad,width = 0):
+	pygame.draw.circle(windowScreen,color,coords,rad,width)
+
+
+def setWindowCaption(caption):
+	pygame.display.set_caption(caption)
+
+# Quad Tree Node data structure	
 class QTNode:
 	def __init__(self):
 		self.children = []
@@ -79,6 +94,7 @@ class QTNode:
 				return False
 		return True
 
+# Quad Tree data structure
 class QuadTree:
 	def __init__(self, boundingBox):
 		self.root = None
@@ -90,6 +106,7 @@ class QuadTree:
 	def isEmpty(self):
 		return self.root == None
 
+	# returns first reference to where the point should be inserted
 	def find(self,qtree,point):
 		if (qtree.root.isLeaf()): # invariant: if its a leaf, it has to be present in bounding box
 			#print("always leaf")
@@ -133,6 +150,7 @@ class QuadTree:
 				child.insert(point)
 
 
+	# splits current quad tree into 4 smaller quad trees
 	def split(self):
 		if (self.isEmpty()):
 			return
@@ -192,27 +210,12 @@ class QuadTree:
 			self.collisions += self.root.children[i].countCollisions()
 		return self.collisions
 
-
-def drawLine(windowScreen, color, point1, point2):
-	#print("been here")
-	pygame.draw.line(windowScreen, color, point1,point2)
-
-def drawPointSizedObject(windowScreen, color, coords, rad,width = 0):
-	pygame.draw.circle(windowScreen,color,coords,rad,width)
-
-
-def setWindowCaption(caption):
-	pygame.display.set_caption(caption)
-
 def main():
 	window = Window()
-	limit = 50
+	windowRef = window.getWindowReference()
+	limit = int(sys.argv[1])
 	setWindowCaption("Collision Detection Using Quad Trees")
 
-	#isSystemDLL("/Users/arpit1997/Desktop/cd-qd")
-	#myfont = pygame.font.Font("/Users/arpit1997/Desktop/cd-qd",15)
-	#collisionLabel = myfont.render("Number of collisions: ", 1, Color.WHITE)
-	#window.getWindowReference().blit(label, (100, 100))
 	objects = []
 
 	for i in range(limit):
@@ -227,14 +230,14 @@ def main():
 
 	done = False
 	clock = pygame.time.Clock()
-	window.getWindowReference().fill(Color.BLACK.value)
+	windowRef.fill(Color.BLACK.value)
 	while not done:
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				done = True
 
 		# draw here
-		window.getWindowReference().fill(Color.BLACK.value)
+		windowRef.fill(Color.BLACK.value)
 		qTree = QuadTree((Point(0,0), Point(window.width, window.height)))
 		for point in objects:
 			if point.x == window.getWidth() or point.x == 0:
@@ -246,28 +249,18 @@ def main():
 			point.setX(max(min(point.x + point.velocity.x*point.fx, window.getWidth()),0))
 			point.setY(max(min(point.y + point.velocity.y*point.fy, window.getHeight()),0))
 
-			drawPointSizedObject(window.getWindowReference(),Color.BLUE.value,[point.x,point.y],4,0)
+			drawPointSizedObject(windowRef,Color.BLUE.value,[point.x,point.y],4,0)
 			qTree.insert(point)
 
 		qTree.countCollisions()
 		pygame.display.flip()
+
 		print(qTree.collisions)
-		# Limit to 50 fps
 		gc.collect() # free any unreferenced memory
-		clock.tick(10)
+		clock.tick(int(sys.argv[2])) # fps
 
 	pygame.quit()
 
-
-# def isSystemDLL(pathname):
-#     origIsSystemDLL = py2exe.build_exe.isSystemDLL # save the orginal before we edit it
-#     # checks if the freetype and ogg dll files are being included
-#     if (os.path.basename(pathname).lower() in ("libfreetype-6.dll", "libogg-0.dll", "sdl_ttf.dll")):
-#     	return 0
-#     return origIsSystemDLL(pathname) # return the orginal function
-
-
-# py2exe.build_exe.isSystemDLL = isSystemDLL # override the default function with this one
 if __name__ == '__main__':
 	pygame.init()
 	main()
