@@ -4,11 +4,8 @@ import random
 import gc
 from enum import Enum
 
-pygame.init()
-
-
 class Point:
-	def __init__(self,x,y, fx = 1, fy = 1, radius = 2):
+	def __init__(self,x,y, fx = 1, fy = 1, radius = 3):
 		self.x = x
 		self.y = y
 		self.fx = fx
@@ -181,6 +178,11 @@ class QuadTree:
 				j = i + 1
 				while (j < numPoints):
 					if (detectCircleCollision(self.points[i], self.points[j])):
+						coords1 = (self.points[i].x, self.points[i].y)
+						coord2 = (self.points[j].x, self.points[j].y)
+						rad = self.points[i].rad
+						drawPointSizedObject(Window().getWindowReference(), Color.RED.value, coords1, rad)
+						drawPointSizedObject(Window().getWindowReference(), Color.RED.value, coord2, rad)
 						self.collisions += 1
 					j += 1
 				i += 1
@@ -195,7 +197,7 @@ def drawLine(windowScreen, color, point1, point2):
 	#print("been here")
 	pygame.draw.line(windowScreen, color, point1,point2)
 
-def drawPointSizedObject(windowScreen, color, coords, rad,width):
+def drawPointSizedObject(windowScreen, color, coords, rad,width = 0):
 	pygame.draw.circle(windowScreen,color,coords,rad,width)
 
 
@@ -204,15 +206,19 @@ def setWindowCaption(caption):
 
 def main():
 	window = Window()
-	limit = 400
+	limit = 50
 	setWindowCaption("Collision Detection Using Quad Trees")
 
+	#isSystemDLL("/Users/arpit1997/Desktop/cd-qd")
+	#myfont = pygame.font.Font("/Users/arpit1997/Desktop/cd-qd",15)
+	#collisionLabel = myfont.render("Number of collisions: ", 1, Color.WHITE)
+	#window.getWindowReference().blit(label, (100, 100))
 	objects = []
 
 	for i in range(limit):
 		x = int(round(random.uniform(0,window.width - 1)))
 		y = int(round(random.uniform(0, window.height - 1)))
-		point = Point(x,y,1,1,2)
+		point = Point(x,y,1,1,4)
 		vx = int(round(random.uniform(1,6)));
 		vy = int(round(random.uniform(1,6)));
 		velocity = Point(vx,vy)
@@ -240,19 +246,28 @@ def main():
 			point.setX(max(min(point.x + point.velocity.x*point.fx, window.getWidth()),0))
 			point.setY(max(min(point.y + point.velocity.y*point.fy, window.getHeight()),0))
 
-			drawPointSizedObject(window.getWindowReference(),Color.BLUE.value,[point.x,point.y],2,0)
+			drawPointSizedObject(window.getWindowReference(),Color.BLUE.value,[point.x,point.y],4,0)
 			qTree.insert(point)
 
-		pygame.display.flip()
-
 		qTree.countCollisions()
+		pygame.display.flip()
 		print(qTree.collisions)
 		# Limit to 50 fps
 		gc.collect() # free any unreferenced memory
-		clock.tick(50)
+		clock.tick(10)
 
 	pygame.quit()
 
 
+# def isSystemDLL(pathname):
+#     origIsSystemDLL = py2exe.build_exe.isSystemDLL # save the orginal before we edit it
+#     # checks if the freetype and ogg dll files are being included
+#     if (os.path.basename(pathname).lower() in ("libfreetype-6.dll", "libogg-0.dll", "sdl_ttf.dll")):
+#     	return 0
+#     return origIsSystemDLL(pathname) # return the orginal function
+
+
+# py2exe.build_exe.isSystemDLL = isSystemDLL # override the default function with this one
 if __name__ == '__main__':
+	pygame.init()
 	main()
