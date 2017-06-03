@@ -8,11 +8,12 @@ pygame.init()
 
 
 class Point:
-	def __init__(self,x,y, fx = 1, fy = 1):
+	def __init__(self,x,y, fx = 1, fy = 1, radius = 2):
 		self.x = x
 		self.y = y
 		self.fx = fx
 		self.fy = fy
+		self.rad = radius
 
 	def addPoint(self,p):
 		return Point(self.x + p.x, self.y + p.y)
@@ -27,8 +28,8 @@ class Point:
 		self.velocity = velocity	
 
 class Window:
-	width = 1000
-	height = 700
+	width = 800
+	height = 500
 	windowScreen = pygame.display.set_mode([width,height])
 
 	def getHeight(self):
@@ -60,6 +61,16 @@ def contained(point, region):
 	checkY = (point.y >= lowerY) and (point.y <= higherY)
 	return checkX and checkY
 
+def detectCircleCollision(point1, point2):
+	# point1, point2 are the circles
+	dx = point2.x - point1.x
+	dy = point2.y - point1.y
+	combinedRadii = point1.rad + point2.rad
+
+	# Distance formula
+	if ((dx * dx) + (dy * dy) < combinedRadii * combinedRadii):
+		return True
+	return False
 
 class QTNode:
 	def __init__(self):
@@ -77,6 +88,7 @@ class QuadTree:
 		self.boundingBox = boundingBox # bounding box is a property of the QTree and not the QTNode
 		self.points = []
 		self.maxLimit = 2
+		self.collisions = 0
 
 	def isEmpty(self):
 		return self.root == None
@@ -107,7 +119,6 @@ class QuadTree:
 
 		q = self.find(self, point)
 		if (q.isEmpty()):
-			print("Null detect")
 			q.root = QTNode()
 			q.points.append(point)
 
@@ -121,7 +132,6 @@ class QuadTree:
 			q.split()
 
 		else: # not a leaf
-			#print("not a leaf")
 			for child in q.root.children:
 				child.insert(point)
 
@@ -149,20 +159,37 @@ class QuadTree:
 		assert len(self.points) > self.maxLimit
 		for point in self.points:
 			if (contained(point, q1.boundingBox)):
-				#print("q1 contains")
-				#print(q1.boundingBox)
 				q1.insert(point)
 			elif (contained(point, q2.boundingBox)):
-				#print("q2 contains")
 				q2.insert(point)
 			elif (contained(point, q3.boundingBox)):
-				#print("q3 contains")
 				q3.insert(point)
 			elif (contained(point, q4.boundingBox)):
-				#print("q4 contains")
 				q4.insert(point)
 
 		self.root.children = [q1,q2,q3,q4]
+
+	def countCollisions(self):
+		# dfs
+		if (self.isEmpty()):
+			return self.collisions
+		if (self.root.isLeaf()):
+			# a leaf can contain maximum maxLimit # of objects. So, an n^2 approach here is ok
+			i = 0
+			numPoints = len(self.points)
+			while (i < numPoints):
+				j = i + 1
+				while (j < numPoints):
+					if (detectCircleCollision(self.points[i], self.points[j])):
+						self.collisions += 1
+					j += 1
+				i += 1
+			return self.collisions
+
+		for i in range(4):
+			self.collisions += self.root.children[i].countCollisions()
+		return self.collisions
+
 
 def drawLine(windowScreen, color, point1, point2):
 	#print("been here")
@@ -177,7 +204,7 @@ def setWindowCaption(caption):
 
 def main():
 	window = Window()
-	limit = 70
+	limit = 400
 	setWindowCaption("Collision Detection Using Quad Trees")
 
 	objects = []
@@ -185,12 +212,12 @@ def main():
 	for i in range(limit):
 		x = int(round(random.uniform(0,window.width - 1)))
 		y = int(round(random.uniform(0, window.height - 1)))
-		ball = Point(x,y,1,1)
+		point = Point(x,y,1,1,2)
 		vx = int(round(random.uniform(1,6)));
 		vy = int(round(random.uniform(1,6)));
 		velocity = Point(vx,vy)
-		ball.updateVelocity(velocity)
-		objects.append(ball)
+		point.updateVelocity(velocity)
+		objects.append(point)
 
 	done = False
 	clock = pygame.time.Clock()
@@ -203,23 +230,25 @@ def main():
 		# draw here
 		window.getWindowReference().fill(Color.BLACK.value)
 		qTree = QuadTree((Point(0,0), Point(window.width, window.height)))
-		for ball in objects:
-			if ball.x == window.getWidth() or ball.x == 0:
-				ball.fx = -1 * ball.fx
+		for point in objects:
+			if point.x == window.getWidth() or point.x == 0:
+				point.fx = -1 * point.fx
 
-			if ball.y == window.getHeight() or ball.y == 0:
-				ball.fy = -1 * ball.fy
+			if point.y == window.getHeight() or point.y == 0:
+				point.fy = -1 * point.fy
 
-			ball.setX(max(min(ball.x + ball.velocity.x*ball.fx, window.getWidth()),0))
-			ball.setY(max(min(ball.y + ball.velocity.y*ball.fy, window.getHeight()),0))
+			point.setX(max(min(point.x + point.velocity.x*point.fx, window.getWidth()),0))
+			point.setY(max(min(point.y + point.velocity.y*point.fy, window.getHeight()),0))
 
-			drawPointSizedObject(window.getWindowReference(),Color.BLUE.value,[ball.x,ball.y],2,0)
-			qTree.insert(ball)
+			drawPointSizedObject(window.getWindowReference(),Color.BLUE.value,[point.x,point.y],2,0)
+			qTree.insert(point)
 
 		pygame.display.flip()
 
+		qTree.countCollisions()
+		print(qTree.collisions)
 		# Limit to 50 fps
-		gc.collect()
+		gc.collect() # free any unreferenced memory
 		clock.tick(50)
 
 	pygame.quit()
