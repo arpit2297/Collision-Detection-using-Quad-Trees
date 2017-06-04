@@ -168,8 +168,8 @@ class QuadTree:
 		q3 = QuadTree((Point(lowerX, meanY), Point(meanX, higherY)))
 		q4 = QuadTree((Point(meanX, meanY), Point(higherX, higherY)))
 
-		drawLine(Window().getWindowReference(), Color.WHITE.value, (meanX, lowerY), (meanX, higherY))
-		drawLine(Window().getWindowReference(), Color.WHITE.value, (lowerX, meanY), (higherX, meanY))
+		drawLine(Window().getWindowReference(), Color.BLACK.value, (meanX, lowerY), (meanX, higherY))
+		drawLine(Window().getWindowReference(), Color.BLACK.value, (lowerX, meanY), (higherX, meanY))
 
 		assert len(self.points) > self.maxLimit
 		for point in self.points:
@@ -222,22 +222,22 @@ def main():
 		x = int(round(random.uniform(0,window.width - 1)))
 		y = int(round(random.uniform(0, window.height - 1)))
 		point = Point(x,y,1,1,4)
-		vx = int(round(random.uniform(1,6)));
-		vy = int(round(random.uniform(1,6)));
+		vx = int(round(random.uniform(1,3)));
+		vy = int(round(random.uniform(1,3)));
 		velocity = Point(vx,vy)
 		point.updateVelocity(velocity)
 		objects.append(point)
 
 	done = False
 	clock = pygame.time.Clock()
-	windowRef.fill(Color.BLACK.value)
+	windowRef.fill(Color.WHITE.value)
 	while not done:
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				done = True
 
 		# draw here
-		windowRef.fill(Color.BLACK.value)
+		windowRef.fill(Color.WHITE.value)
 		qTree = QuadTree((Point(0,0), Point(window.width, window.height)))
 		for point in objects:
 			if point.x == window.getWidth() or point.x == 0:
@@ -249,7 +249,7 @@ def main():
 			point.setX(max(min(point.x + point.velocity.x*point.fx, window.getWidth()),0))
 			point.setY(max(min(point.y + point.velocity.y*point.fy, window.getHeight()),0))
 
-			drawPointSizedObject(windowRef,Color.BLUE.value,[point.x,point.y],4,0)
+			drawPointSizedObject(windowRef,Color.BLACK.value,[point.x,point.y],3,0)
 			qTree.insert(point)
 
 		qTree.countCollisions()
