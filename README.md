@@ -6,7 +6,7 @@ Quad Tree is a data structure in which every internal node has exactly 4 childre
 
 1. Image Processing
 2. Mesh generation
-3. Efficient collision detection (in games)
+3. Efficient collision detection
 
 ## Efficient Collision Detection
 This project focuses primarily on the collision detection use case of quad trees. Let's suppose we have n points in some space. We can detect collisions easily using the naive O(n^2) implementation (checking every point against the other). Although this might seem feasible for very small n, the algorithm is very inefficient even for small n = 100 (10^4 comparisions). A more efficient (and elegant) solution is to use quad trees. The idea is to insert all the points in a quad tree (keeping in mind the properties mentioned above). Since average time for insert into a quad tree is O(log n), inserting all of the n points costs O(nlogn) time. (Note in theory, height of a quad tree can be unbounded, which can dramatically affect performance. However, in most cases, we only care about average case runtime). Once the quad tree is built, we simple traverse the tree using a depth first search and upon hitting a leaf node, use the naive algorithm (since every leaf node can only ever contain a maximum number of points bounded above by the threshold mentioned before). Thus, for n = 100, this algorithm performs much better, as it makes at most 100log(100) = 200 comparisons as opposed to 10^4 comparisons. 
