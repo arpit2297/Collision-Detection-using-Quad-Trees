@@ -5,7 +5,7 @@ Quad Tree is a data structure in which every internal node has exactly 4 childre
 ## Use cases:
 
 1. Image Processing
-2. Image Compression
+2. Mesh generation
 3. Efficient collision detection (in games)
 
 ## Efficient Collision Detection
