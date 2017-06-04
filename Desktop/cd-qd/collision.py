@@ -73,7 +73,6 @@ def detectCircleCollision(point1, point2):
 	return False
 
 def drawLine(windowScreen, color, point1, point2):
-	#print("been here")
 	pygame.draw.line(windowScreen, color, point1,point2)
 
 def drawPointSizedObject(windowScreen, color, coords, rad,width = 0):
@@ -109,7 +108,6 @@ class QuadTree:
 	# returns first reference to where the point should be inserted
 	def find(self,qtree,point):
 		if (qtree.root.isLeaf()): # invariant: if its a leaf, it has to be present in bounding box
-			#print("always leaf")
 			return self
 		for i in range(4):
 			q = qtree.root.children[i]
@@ -122,11 +120,9 @@ class QuadTree:
 
 	def insert(self,point):
 		if (not contained(point, self.boundingBox)):
-			#print("not contained!")
 			return
 
 		if (self.isEmpty()):
-			#print("Quad tree empty. Making new root")
 			self.root = QTNode()
 			self.points.append(point)
 			return
@@ -137,11 +133,9 @@ class QuadTree:
 			q.points.append(point)
 
 		elif (q.root.isLeaf() and len(q.points) < q.maxLimit):
-			#print("Appending")
 			q.points.append(point)
 
 		elif (q.root.isLeaf()):
-			#print("gonna split")
 			q.points.append(point)
 			q.split()
 
@@ -256,7 +250,8 @@ def main():
 		pygame.display.flip()
 
 		print(qTree.collisions)
-		gc.collect() # free any unreferenced memory
+		# free any unreferenced memory to avoid defragmentation. Possible perfomance improvements.
+		gc.collect()
 		clock.tick(int(sys.argv[2])) # fps
 
 	pygame.quit()
