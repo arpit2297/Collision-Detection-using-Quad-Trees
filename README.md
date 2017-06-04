@@ -23,3 +23,7 @@ This project focuses primarily on the collision detection use case of quad trees
 ![alt text](https://github.com/arp001/Collision-Detection-using-Quad-Trees/blob/cd-qd/25fps100objs.gif)
 ## Demo 3
 ![alt text](https://github.com/arp001/Collision-Detection-using-Quad-Trees/blob/cd-qd/60fps15objs.gif)
+
+## Author
+
+Arpit Hamirwasia, 2017
