@@ -1,6 +1,6 @@
 # Collision Detection using Quad Trees
 
-# Previews:
+# Previews (with a max of 2 objects per quadrant) :
 
 ## Preview 1
 ![alt text](https://github.com/arp001/Collision-Detection-using-Quad-Trees/blob/cd-qd/60fps15objs.gif)
