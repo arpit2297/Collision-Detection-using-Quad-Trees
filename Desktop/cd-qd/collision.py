@@ -86,7 +86,8 @@ def setWindowCaption(caption):
 class QTNode:
 	def __init__(self):
 		self.children = []
-
+	
+	# returns true if a node is a leaf in the quadtree
 	def isLeaf(self):
 		for child in self.children:
 			if child is not None:
@@ -101,7 +102,8 @@ class QuadTree:
 		self.points = []
 		self.maxLimit = 2
 		self.collisions = 0
-
+	
+	# returns true if quadtree is empty
 	def isEmpty(self):
 		return self.root == None
 
@@ -117,7 +119,8 @@ class QuadTree:
 				return q.find(q,point)
 
 		return self # should never get here .. 
-
+	
+	# inserts a point into the quadtree
 	def insert(self,point):
 		if (not contained(point, self.boundingBox)):
 			return
@@ -177,7 +180,8 @@ class QuadTree:
 				q4.insert(point)
 
 		self.root.children = [q1,q2,q3,q4]
-
+	
+	# Method to detect collisions for the quadtree built for the frame
 	def countCollisions(self):
 		# dfs
 		if (self.isEmpty()):
@@ -190,16 +194,17 @@ class QuadTree:
 				j = i + 1
 				while (j < numPoints):
 					if (detectCircleCollision(self.points[i], self.points[j])):
-						coords1 = (self.points[i].x, self.points[i].y)
+						coord1 = (self.points[i].x, self.points[i].y)
 						coord2 = (self.points[j].x, self.points[j].y)
 						rad = self.points[i].rad
-						drawPointSizedObject(Window().getWindowReference(), Color.RED.value, coords1, rad)
+						drawPointSizedObject(Window().getWindowReference(), Color.RED.value, coord1, rad)
 						drawPointSizedObject(Window().getWindowReference(), Color.RED.value, coord2, rad)
 						self.collisions += 1
 					j += 1
 				i += 1
 			return self.collisions
-
+	
+		# recurse on children
 		for i in range(4):
 			self.collisions += self.root.children[i].countCollisions()
 		return self.collisions
