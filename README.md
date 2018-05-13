@@ -13,7 +13,7 @@ This project focuses primarily on the collision detection use case of quad trees
 
 # Examples:
 
-In these examples, collisions are shown in red.
+In these examples, collisions are shown in red. The grids are visual representations of the quad tree that is dynamically built using the data points at runtime. 
 
 ## Example 1
 ![alt text](https://github.com/arp001/Collision-Detection-using-Quad-Trees/blob/cd-qd/80fps200objs.gif)
